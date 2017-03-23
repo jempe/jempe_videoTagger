@@ -4,6 +4,7 @@
 #include <qmediaplayer.h>
 
 #include <QMainWindow>
+#include <QProcess>
 
 QT_BEGIN_NAMESPACE
 class QAbstractButton;
@@ -27,6 +28,7 @@ private:
     QMediaPlayer *player;
     QString folderPath;
     QString fileName;
+    QProcess *myProcess;
 
 private slots:
     void positionChanged(qint64 progress);
@@ -36,6 +38,8 @@ private slots:
     void setPausedPosition(int position);
     void openFile();
     void setUrl(const QUrl &url);
+    void saveScreenshot();
+    void readyReadStandardOutput();
     bool loadJSON();
     bool saveJSON();
 };

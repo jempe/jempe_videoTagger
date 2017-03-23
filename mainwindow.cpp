@@ -16,6 +16,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->playButton->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
 
+    ui->screenshotButton->setIcon(style()->standardIcon(QStyle::SP_DialogSaveButton));
+
     ui->slider->setRange(0,0);
     connect(ui->slider, SIGNAL(sliderMoved(int)), SLOT(setPosition(int)));
 
@@ -29,6 +31,11 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(ui->openButton, SIGNAL(clicked(bool)), SLOT(openFile()));
     connect(ui->saveButton, SIGNAL(clicked(bool)), SLOT(saveJSON()));
+
+    connect(ui->screenshotButton, SIGNAL(clicked(bool)), SLOT(saveScreenshot()));
+
+    myProcess = new QProcess(this);
+    connect(myProcess,SIGNAL(readyReadStandardOutput()),SLOT(readyReadStandardOutput()));
 }
 
 MainWindow::~MainWindow()
@@ -105,6 +112,7 @@ void MainWindow::setUrl(const QUrl &url)
     setWindowFilePath(url.isLocalFile() ? url.toLocalFile() : QString());
     player->setMedia(url);
     ui->playButton->setEnabled(true);
+    ui->screenshotButton->setEnabled(true);
 
     fileName = url.fileName();
     folderPath = url.path().replace(QRegExp(fileName + "$"), "");
@@ -112,10 +120,51 @@ void MainWindow::setUrl(const QUrl &url)
     loadJSON();
 }
 
+void MainWindow::saveScreenshot()
+{
+    qint64 position = player->position();
+    if( position > 1000)
+    {
+        QString videoFile = folderPath + fileName;
+        QString screenshotFile = videoFile + ".jpg";
+
+        qDebug() << videoFile;
+
+        /*QString program = "ffplay";
+        QStringList arguments;
+        arguments << videoFile;
+        myProcess->start(program, arguments);*/
+
+        QString program = "ffmpeg";
+
+        QString positionTime = QString::number(position,10);
+
+        QString floatTime = positionTime.left(positionTime.length() - 3);
+        floatTime.append(".");
+        floatTime.append(positionTime.right(3));
+
+        qDebug() << floatTime;
+
+        QStringList arguments;
+        arguments.append("-ss");
+        arguments.append(floatTime);
+        arguments.append("-i");
+        arguments.append(videoFile);
+        arguments.append("-vframes");
+        arguments.append("1");
+        arguments.append("-q:v");
+        arguments.append("2");
+        arguments.append(screenshotFile);
+
+        myProcess->start(program, arguments);
+    }
+}
+
 bool MainWindow::loadJSON()
 {
     QString sourceFile;
-    sourceFile = folderPath + fileName.replace(QRegExp(".mp4$"), ".json");
+    QString videoFileName = fileName;
+    sourceFile = folderPath + videoFileName.replace(QRegExp(".mp4$"), ".json");
 
     QFile loadFile(sourceFile);
 
@@ -172,7 +221,8 @@ bool MainWindow::loadJSON()
 bool MainWindow::saveJSON()
 {
     QString targetFile;
-    targetFile = folderPath + fileName.replace(QRegExp(".mp4$"), ".json");
+    QString videoFileName = fileName;
+    targetFile = folderPath + videoFileName.replace(QRegExp(".mp4$"), ".json");
 
     QFile saveFile(targetFile);
 
@@ -213,4 +263,9 @@ bool MainWindow::saveJSON()
     saveFile.write(saveDoc.toJson());
 
     return true;
+}
+
+void MainWindow::readyReadStandardOutput()
+{
+    qDebug() << myProcess->readAllStandardOutput();
 }
