@@ -23,6 +23,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->deleteScene->setIcon(style()->standardIcon(QStyle::SP_DialogCloseButton));
 
+    connect(ui->deleteScene, SIGNAL(clicked(bool)), SLOT(deleteScene()));
+
     ui->slider->setRange(0,0);
     connect(ui->slider, SIGNAL(sliderMoved(int)), SLOT(setPosition(int)));
 
@@ -41,6 +43,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     myProcess = new QProcess(this);
     connect(myProcess,SIGNAL(readyReadStandardOutput()),SLOT(readyReadStandardOutput()));
+
+    connect(ui->scenesList, SIGNAL(currentIndexChanged(int)), SLOT(jumpToScene()));
 
     //ui->sceneButton->setStyleSheet("QToolButton{border:none; background-image: url(:/images/cue.png); }");
 }
@@ -128,12 +132,39 @@ void MainWindow::setUrl(const QUrl &url)
 
     loadJSON();
 
-    scenes.clear();
+    ui->scenesList->clear();
+    addScene();
 }
 
 void MainWindow::addScene()
 {
-    ui->scenesList->insertItem(0, QString::number(player->position()),QVariant(player->position()));
+    int insertPosition = 0;
+    bool insert = true;
+
+    for(auto i = 0; i < ui->scenesList->count(); i++)
+    {
+        if(player->position() == ui->scenesList->itemData(i).toLongLong())
+        {
+            insert = false;
+        }
+        else if(player->position() > ui->scenesList->itemData(i).toLongLong())
+        {
+            insertPosition++;
+        }
+    }
+
+    if(insert)
+    {
+        ui->scenesList->insertItem(insertPosition, QString::number(player->position()),QVariant(player->position()));
+    }
+}
+
+void MainWindow::deleteScene()
+{
+    if(ui->scenesList->currentIndex() != 0)
+    {
+        ui->scenesList->removeItem(ui->scenesList->currentIndex());
+    }
 }
 
 void MainWindow::saveScreenshot()
@@ -153,11 +184,7 @@ void MainWindow::saveScreenshot()
 
         QString program = "ffmpeg";
 
-        QString positionTime = QString::number(position,10);
-
-        QString floatTime = positionTime.left(positionTime.length() - 3);
-        floatTime.append(".");
-        floatTime.append(positionTime.right(3));
+        QString floatTime = secondsToString(position);
 
         qDebug() << floatTime;
 
@@ -174,6 +201,17 @@ void MainWindow::saveScreenshot()
 
         myProcess->start(program, arguments);
     }
+}
+
+QString MainWindow::secondsToString(qint64 seconds)
+{
+    QString positionTime = QString::number(seconds,10);
+
+    QString floatTime = positionTime.left(positionTime.length() - 3);
+    floatTime.append(".");
+    floatTime.append(positionTime.right(3));
+
+    return floatTime;
 }
 
 bool MainWindow::loadJSON()
@@ -284,4 +322,27 @@ bool MainWindow::saveJSON()
 void MainWindow::readyReadStandardOutput()
 {
     qDebug() << myProcess->readAllStandardOutput();
+}
+
+void MainWindow::jumpToScene()
+{
+    if(ui->scenesList->currentIndex() == 0)
+    {
+        ui->deleteScene->setEnabled(false);
+    }
+    else
+    {
+        ui->deleteScene->setEnabled(true);
+    }
+
+    player->setPosition(ui->scenesList->currentData().toLongLong());
+}
+
+void MainWindow::saveScenes()
+{
+    for(auto i = 0; i < ui->scenesList->count(); i++)
+    {
+
+    }
+    //ffmpeg -i ed_1024.mp4 -ss 1 -t 100.32 -vcodec copy -acodec copy ed_1024_scene1.mp4
 }

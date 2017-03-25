@@ -30,8 +30,6 @@ private:
     QString folderPath;
     QString fileName;
     QProcess *myProcess;
-    QVector<qint64> scenes;
-    QToolButton *sceneButtons[];
 
 private slots:
     void positionChanged(qint64 progress);
@@ -44,8 +42,12 @@ private slots:
     void saveScreenshot();
     void readyReadStandardOutput();
     void addScene();
+    void deleteScene();
+    void jumpToScene();
     bool loadJSON();
     bool saveJSON();
+    void saveScenes();
+    QString secondsToString(qint64 seconds);
 };
 
 #endif // MAINWINDOW_H
