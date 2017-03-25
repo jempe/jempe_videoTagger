@@ -17,6 +17,11 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->playButton->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
 
     ui->screenshotButton->setIcon(style()->standardIcon(QStyle::SP_DialogSaveButton));
+    ui->newScene->setIcon(style()->standardIcon(QStyle::SP_DialogApplyButton));
+
+    connect(ui->newScene, SIGNAL(clicked(bool)), SLOT(addScene()));
+
+    ui->deleteScene->setIcon(style()->standardIcon(QStyle::SP_DialogCloseButton));
 
     ui->slider->setRange(0,0);
     connect(ui->slider, SIGNAL(sliderMoved(int)), SLOT(setPosition(int)));
@@ -36,6 +41,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     myProcess = new QProcess(this);
     connect(myProcess,SIGNAL(readyReadStandardOutput()),SLOT(readyReadStandardOutput()));
+
+    //ui->sceneButton->setStyleSheet("QToolButton{border:none; background-image: url(:/images/cue.png); }");
 }
 
 MainWindow::~MainWindow()
@@ -114,10 +121,19 @@ void MainWindow::setUrl(const QUrl &url)
     ui->playButton->setEnabled(true);
     ui->screenshotButton->setEnabled(true);
 
+    ui->newScene->setEnabled(true);
+
     fileName = url.fileName();
     folderPath = url.path().replace(QRegExp(fileName + "$"), "");
 
     loadJSON();
+
+    scenes.clear();
+}
+
+void MainWindow::addScene()
+{
+    ui->scenesList->insertItem(0, QString::number(player->position()),QVariant(player->position()));
 }
 
 void MainWindow::saveScreenshot()

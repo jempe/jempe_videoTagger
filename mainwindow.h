@@ -5,6 +5,7 @@
 
 #include <QMainWindow>
 #include <QProcess>
+#include <QToolButton>
 
 QT_BEGIN_NAMESPACE
 class QAbstractButton;
@@ -29,6 +30,8 @@ private:
     QString folderPath;
     QString fileName;
     QProcess *myProcess;
+    QVector<qint64> scenes;
+    QToolButton *sceneButtons[];
 
 private slots:
     void positionChanged(qint64 progress);
@@ -40,6 +43,7 @@ private slots:
     void setUrl(const QUrl &url);
     void saveScreenshot();
     void readyReadStandardOutput();
+    void addScene();
     bool loadJSON();
     bool saveJSON();
 };
