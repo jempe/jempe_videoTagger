@@ -47,7 +47,7 @@ private slots:
     bool loadJSON();
     bool saveJSON();
     void saveScenes();
-    QString secondsToString(qint64 seconds);
+    QString secondsToString(qint64 seconds, bool decimals);
 };
 
 #endif // MAINWINDOW_H

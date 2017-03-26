@@ -46,6 +46,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(ui->scenesList, SIGNAL(currentIndexChanged(int)), SLOT(jumpToScene()));
 
+    connect(ui->saveScenesButton, SIGNAL(clicked(bool)), SLOT(saveScenes()));
+
     //ui->sceneButton->setStyleSheet("QToolButton{border:none; background-image: url(:/images/cue.png); }");
 }
 
@@ -184,7 +186,7 @@ void MainWindow::saveScreenshot()
 
         QString program = "ffmpeg";
 
-        QString floatTime = secondsToString(position);
+        QString floatTime = secondsToString(position, true);
 
         qDebug() << floatTime;
 
@@ -203,13 +205,17 @@ void MainWindow::saveScreenshot()
     }
 }
 
-QString MainWindow::secondsToString(qint64 seconds)
+QString MainWindow::secondsToString(qint64 seconds, bool decimals)
 {
     QString positionTime = QString::number(seconds,10);
 
     QString floatTime = positionTime.left(positionTime.length() - 3);
-    floatTime.append(".");
-    floatTime.append(positionTime.right(3));
+
+    if(decimals)
+    {
+        floatTime.append(".");
+        floatTime.append(positionTime.right(3));
+    }
 
     return floatTime;
 }
@@ -340,9 +346,47 @@ void MainWindow::jumpToScene()
 
 void MainWindow::saveScenes()
 {
-    for(auto i = 0; i < ui->scenesList->count(); i++)
+    qint64 sceneStart = 0;
+    if(ui->scenesList->count() > 1)
     {
+        for(auto i = 1; i <= ui->scenesList->count(); i++)
+        {
+            QString program = "ffmpeg";
 
+            QString targetFile;
+            QString videoFileName = fileName;
+            targetFile = folderPath + videoFileName.replace(QRegExp(".mp4$"), "_scene" + QString::number(i) + ".mp4");
+
+            QString sourceFile = folderPath + fileName;
+
+            qDebug() << sourceFile;
+
+            qint64 sceneEnd = player->duration();
+
+            if(i < ui->scenesList->count())
+            {
+                sceneEnd = ui->scenesList->itemData(i).toLongLong();
+            }
+
+            QStringList arguments;
+            arguments.append("-i");
+            arguments.append(sourceFile);
+            arguments.append("-ss");
+            arguments.append(secondsToString(sceneStart, false));
+            arguments.append("-t");
+            arguments.append(secondsToString(sceneEnd - sceneStart, false));
+            arguments.append("-vcodec");
+            arguments.append("copy");
+            arguments.append("-acodec");
+            arguments.append("copy");
+            arguments.append(targetFile);
+
+            myProcess->start(program, arguments);
+
+            myProcess->waitForFinished(120000);
+
+            sceneStart = sceneEnd;
+        }
     }
     //ffmpeg -i ed_1024.mp4 -ss 1 -t 100.32 -vcodec copy -acodec copy ed_1024_scene1.mp4
 }
